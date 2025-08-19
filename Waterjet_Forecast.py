@@ -5,15 +5,40 @@
 # - 进入页面即自动抓数+预测；侧栏仍可调参数；提供“刷新数据”按钮
 # - Latest Temp 后新增“故障率”显示：见 compute_failure_rate()
 
+import os
 import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from matplotlib import font_manager as fm
 import requests
 
 from datetime import datetime, time, timedelta, timezone
 import pytz
+
+FONT_PATH = "fonts\NotoSansSC-Regular.otf"  # 你的字体相对路径
+
+def setup_chinese_font():
+    try:
+        if os.path.exists(FONT_PATH):
+            fm.fontManager.addfont(FONT_PATH)
+            font_prop = fm.FontProperties(fname=FONT_PATH)
+            # 将全局字体设为该中文字体
+            plt.rcParams["font.family"] = font_prop.get_name()
+        else:
+            # 兜底：如果缺文件，尽量使用系统里常见的中文字体名
+            plt.rcParams["font.sans-serif"] = [
+                "Noto Sans SC", "Source Han Sans CN", "Microsoft YaHei",
+                "PingFang SC", "Heiti SC", "SimHei", "Arial Unicode MS", "DejaVu Sans"
+            ]
+        # 让负号正常显示（不被当作方块）
+        plt.rcParams["axes.unicode_minus"] = False
+    except Exception as e:
+        # 出错也不要影响主流程
+        print("Chinese font setup failed:", e)
+
+setup_chinese_font()
 
 # ============== 基础配置 ==============
 API_URL      = "http://61.177.143.140:8086/query"
