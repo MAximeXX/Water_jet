@@ -1,0 +1,7 @@
+streamlit>=1.36
+pandas>=2.2
+numpy>=1.26
+requests>=2.31
+matplotlib>=3.8
+pytz>=2024.1
+statsmodels>=0.14
