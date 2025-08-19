@@ -17,7 +17,7 @@ import requests
 from datetime import datetime, time, timedelta, timezone
 import pytz
 
-FONT_PATH = "fonts\NotoSansSC-Regular.otf"  # 你的字体相对路径
+FONT_PATH = "fonts/NotoSansSC-Regular.otf"  # 你的字体相对路径
 
 def setup_chinese_font():
     try:
