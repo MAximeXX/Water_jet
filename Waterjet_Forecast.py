@@ -91,6 +91,14 @@ def compute_failure_rate(temp: float) -> float:
         return 0.0
     return (temp - 25.0) / (45.0 - 25.0) * 100.0
 
+def is_realtime_mode(end_sh: datetime, tolerance_min: int = 1) -> bool:
+    """
+    判断是否处于“实时模式”：
+    - 若 结束时间 与 当前上海时间（去秒） 相差不超过 tolerance_min 分钟，则视为实时模式
+    """
+    now = local_now()  # 已去秒
+    return abs((now - end_sh).total_seconds()) <= tolerance_min * 60
+
 # ============== 默认参数 ==============
 def compute_defaults():
     """构造一套“当前时间向前 2 小时”的默认参数"""
@@ -286,6 +294,7 @@ start_sh = SH_TZ.localize(datetime.combine(st.session_state["sel_date"], time(st
 end_sh   = SH_TZ.localize(datetime.combine(st.session_state["sel_date"], time(st.session_state["eh"], st.session_state["em"])))
 if end_sh <= start_sh:
     end_sh = start_sh + timedelta(minutes=1)
+realtime = is_realtime_mode(end_sh)
 
 # ============== 主流程（自动执行） ==============
 with st.spinner("正在获取数据并进行预测..."):
@@ -336,11 +345,18 @@ ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
 st.pyplot(fig, clear_figure=True)
 
 # 快速指标：Latest Temp & 故障率
-latest_idx = tz_to_plot(ts).dropna().index.max()
-if pd.notna(latest_idx):
-    latest_temp = float(ts.dropna().iloc[-1])
-    failure_rate = compute_failure_rate(latest_temp)
-    cA, cB, cC = st.columns([1,1,2])
-    cA.metric("实时温度 (°C)", f"{latest_temp:.2f}")
-    cB.metric("故障率", f"{failure_rate:.0f}%")
-    cC.write(f"时间：{latest_idx.strftime('%Y-%m-%d %H:%M')}（点击上方“刷新数据”可即时更新）")
+# 快速指标：仅在“实时模式”显示实时温度 & 故障率
+if realtime:
+    latest_idx = tz_to_plot(ts).dropna().index.max()
+    if pd.notna(latest_idx):
+        latest_temp = float(ts.dropna().iloc[-1])
+        failure_rate = compute_failure_rate(latest_temp)
+        cA, cB, cC = st.columns([1,1,2])
+        cA.metric("实时温度 (°C)", f"{latest_temp:.2f}")
+        cB.metric("故障率", f"{failure_rate:.0f}%")
+        cC.write(f"时间：{latest_idx.strftime('%Y-%m-%d %H:%M')}（点击上方“刷新数据”可即时更新）")
+else:
+    # 历史回看模式下不展示实时指标（留空或给一点说明也可以）
+    # st.caption("当前为历史回看模式：不显示实时温度与故障率。")
+    pass
+
